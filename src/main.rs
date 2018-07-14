@@ -1,6 +1,22 @@
+extern crate pest;
+#[macro_use]
+extern crate pest_derive;
+
 use std::env;
 use std::fs::File;
 use std::io::Read;
+use pest::Parser;
+
+//-----------------------------------------------------------------------
+//Pest boilerplate from the book (https://pest-parser.github.io/book/)
+
+const _GRAMMAR: &str = include_str!("gabc.pest");
+
+#[derive(Parser)]
+#[grammar = "gabc.pest"]
+pub struct GABCParser;
+
+//-----------------------------------------------------------------------
 
 #[derive(Debug)]
 struct Note<'a> {
