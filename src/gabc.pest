@@ -1,3 +1,5 @@
-field = { ('0'..'9' | "." | "-")+ }
-record = { field ~ ("," ~ field)* }
-file = { soi ~ (record ~ ("\r\n" | "\n"))* ~ eoi }
+file = { soi ~ syllable* ~ "\n"* ~ eoi }
+
+string = { ('a'..'z' | 'A'..'Z')* }
+note_pos = { ('a'..'f') }
+syllable = { string ~ "(" ~ note_pos+ ~ ")" }

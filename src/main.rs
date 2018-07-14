@@ -2,10 +2,10 @@ extern crate pest;
 #[macro_use]
 extern crate pest_derive;
 
+use pest::Parser;
 use std::env;
 use std::fs::File;
 use std::io::Read;
-use pest::Parser;
 
 //-----------------------------------------------------------------------
 //Pest boilerplate from the book (https://pest-parser.github.io/book/)
@@ -29,8 +29,16 @@ fn main() {
     let mut file = File::open(&first).expect("Error opening file");
     let mut text = String::new();
     file.read_to_string(&mut text).expect("Error reading file");
+    //derived from example from the book:
+    let parsed_file = GABCParser::parse(Rule::file, &text)
+        .expect("unsuccessful parse") // unwrap the parse result
+        .next().unwrap(); // get and unwrap the `file` rule; never fails
     println!("Processing string: {}", text);
-    println!("{:?}", text_to_notes(&text.trim()));
+    for syllable in parsed_file.into_inner() {
+        for something in syllable.into_inner() {
+            println!("{:?}", something.as_str());
+        }
+    }
 }
 
 //Processes (clumsily) a string like "text(music)text2(music2)..." into a Vec<Note>
@@ -41,7 +49,7 @@ fn text_to_notes<'b>(text: &'b str) -> Vec<Note<'b>> {
         let a: Vec<&str> = st.split('(').collect();
         let n: Note = Note {
             text: a[0],
-            music: a[1]
+            music: a[1],
         };
         v.push(n);
     }
