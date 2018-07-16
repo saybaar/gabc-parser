@@ -1,7 +1,9 @@
+extern crate itertools;
 extern crate pest;
 #[macro_use]
 extern crate pest_derive;
 
+use itertools::Itertools;
 use pest::Parser;
 use std::env;
 use std::fs::File;
@@ -21,7 +23,7 @@ pub struct GABCParser;
 #[derive(Debug)]
 struct Note<'a> {
     text: &'a str,
-    music: &'a str,
+    music: Vec<&'a str>,
 }
 
 fn main() {
@@ -33,25 +35,27 @@ fn main() {
     let parsed_file = GABCParser::parse(Rule::file, &text)
         .expect("unsuccessful parse") // unwrap the parse result
         .next().unwrap(); // get and unwrap the `file` rule; never fails
-    println!("Processing string: {}", text);
-    for syllable in parsed_file.into_inner() {
-        for something in syllable.into_inner() {
-            println!("{:?}", something.as_str());
+    let mut notes: Vec<Note> = Vec::new();
+    let mut attributes: Vec<(&str, &str)> = Vec::new();
+    for pair in parsed_file.into_inner() {
+        match pair.as_rule() {
+            Rule::attribute => {
+                let attribute: (&str, &str) = pair.into_inner().map(|x| x.as_str())
+                                                                    .next_tuple().unwrap();
+                attributes.push(attribute);
+            },
+            Rule::syllable => {
+                let strings: Vec<&str> = pair.into_inner().map(|x| x.as_str()).collect();
+                notes.push(Note { text: strings[0], music: strings[1..].to_vec() } );
+            },
+            _ => {}
         }
     }
-}
-
-//Processes (clumsily) a string like "text(music)text2(music2)..." into a Vec<Note>
-fn text_to_notes<'b>(text: &'b str) -> Vec<Note<'b>> {
-    let splits = text.split(')').filter(|s| s != &"");
-    let mut v: Vec<Note> = Vec::new();
-    for st in splits {
-        let a: Vec<&str> = st.split('(').collect();
-        let n: Note = Note {
-            text: a[0],
-            music: a[1],
-        };
-        v.push(n);
+    for attribute in attributes {
+        println!("Attribute: {:?}", attribute);
     }
-    v
+    for note in notes {
+        println!("Note: {:?}", note);
+
+    }
 }

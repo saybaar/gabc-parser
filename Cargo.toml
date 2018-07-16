@@ -6,3 +6,4 @@ authors = ["Lydia Simmons"]
 [dependencies]
 pest = "1.0.6"
 pest_derive = "1.0.6"
+itertools = "0.7.8"

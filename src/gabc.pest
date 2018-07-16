@@ -1,4 +1,8 @@
-file = { soi ~ syllable* ~ "\n"* ~ eoi }
+file = { soi ~ attribute* ~ "%%\n" ~ syllable* ~ "\n"* ~ eoi }
+
+attribute = { attribute_key ~ ":" ~ attribute_value ~ ";\n"}
+attribute_key = { (!(":"|";") ~ any)* }
+attribute_value = { (!(":"|";") ~ any)* }
 
 string = { ('a'..'z' | 'A'..'Z')* }
 note_pos = { ('a'..'f') }

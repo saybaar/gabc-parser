@@ -1,1 +1,4 @@
+office-part:Tractus;
+mode:8;
+%%
 glo(abc)ri(def)a(fed)
