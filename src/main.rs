@@ -53,16 +53,12 @@ fn main() {
     }
 }
 
+///Pretty-print a parse output tree
 fn print_rule_tree(rules: pest::iterators::Pairs<Rule>, tabs: usize) {
-    match rules.clone().count() {
-        0 => {},
-        _ => {
-            for rule in rules {
-                for _ in 0..tabs { print!("\t"); }
-                print!("{:?}: {}\n", rule.as_rule(), rule.as_str());
-                print_rule_tree(rule.into_inner(), tabs + 1)
-             }
-         },
+    for rule in rules {
+        for _ in 0..tabs { print!("\t"); }
+        print!("{:?}: {}\n", rule.as_rule(), rule.as_str());
+        print_rule_tree(rule.into_inner(), tabs + 1)
     }
 }
 
