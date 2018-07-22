@@ -26,18 +26,37 @@ struct Note<'a> {
     music: Vec<&'a str>,
 }
 
+struct GabcFile<'a> {
+    attributes: Vec<(&'a str, &'a str)>,
+    notes: Vec<Note<'a>>,
+}
+
 fn main() {
     let first = env::args().nth(1).expect("Please supply a filename");
     let mut file = File::open(&first).expect("Error opening file");
     let mut text = String::new();
     file.read_to_string(&mut text).expect("Error reading file");
     //derived from example from the book:
-    let parsed_file = GABCParser::parse(Rule::file, &text)
-        .expect("unsuccessful parse") // unwrap the parse result
-        .next().unwrap(); // get and unwrap the `file` rule; never fails
+    let parse_result = GABCParser::parse(Rule::file, &text);
+    let output: GabcFile;
+    match parse_result {
+        Err(e) => { println!("Parse error: {}", e);
+                    std::process::exit(1); },
+        Ok(pairs) => output = parsed_file_to_struct(pairs)
+    }
+    for attribute in output.attributes {
+        println!("Attribute: {:?}", attribute);
+    }
+    for note in output.notes {
+        println!("Note: {:?}", note);
+
+    }
+}
+
+fn parsed_file_to_struct<'b>(mut parsed_file: pest::iterators::Pairs<'b, Rule>) -> GabcFile<'b> {
     let mut notes: Vec<Note> = Vec::new();
     let mut attributes: Vec<(&str, &str)> = Vec::new();
-    for pair in parsed_file.into_inner() {
+    for pair in parsed_file.next().unwrap().into_inner() {
         match pair.as_rule() {
             Rule::attribute => {
                 let attribute: (&str, &str) = pair.into_inner().map(|x| x.as_str())
@@ -51,11 +70,5 @@ fn main() {
             _ => {}
         }
     }
-    for attribute in attributes {
-        println!("Attribute: {:?}", attribute);
-    }
-    for note in notes {
-        println!("Note: {:?}", note);
-
-    }
+    GabcFile { attributes, notes }
 }
