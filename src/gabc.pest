@@ -1,9 +1,14 @@
-file = { soi ~ attribute* ~ "%%\n" ~ syllable* ~ "\n"* ~ eoi }
+file = { soi ~ (attribute ~ "\n")* ~ "%%\n" ~ syllable* ~ "\n"* ~ eoi }
 
-attribute = { attribute_key ~ ":" ~ attribute_value ~ ";\n"}
+attribute = { attribute_key ~ ":" ~ attribute_value ~ ";"}
 attribute_key = { (!(":"|";") ~ any)* }
 attribute_value = { (!(":"|";") ~ any)* }
 
-string = { ('a'..'z' | 'A'..'Z')* }
-note_pos = { ('a'..'f') }
-syllable = { string ~ "(" ~ note_pos+ ~ ")" }
+
+clef = { ("c" | "f") ~ ('1'..'4') }
+note = { position ~ suffix? }
+position = { ('a'..'m') }
+suffix = { ("~" | ">" | "<" | "v" | "V" | "o~" | "o<" | "o" | "w" | "s<" | "s") }
+syllable = { string ~ "(" ~ (clef | note+) ~ ")" }
+
+string = { ('a'..'z' | 'A'..'Z' | " ")* }
