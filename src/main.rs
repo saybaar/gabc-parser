@@ -42,17 +42,32 @@ fn main() {
     match parse_result {
         Err(e) => { println!("Parse error: {}", e);
                     std::process::exit(1); },
-        Ok(pairs) => output = parsed_file_to_struct(pairs)
+        Ok(pairs) => { print_rule_tree(pairs.clone(), 0);
+                       output = parsed_file_to_struct(pairs);}
     }
     for attribute in output.attributes {
         println!("Attribute: {:?}", attribute);
     }
     for note in output.notes {
         println!("Note: {:?}", note);
-
     }
 }
 
+fn print_rule_tree(rules: pest::iterators::Pairs<Rule>, tabs: usize) {
+    match rules.clone().count() {
+        0 => {},
+        _ => {
+            for rule in rules {
+                for _ in 0..tabs { print!("\t"); }
+                print!("{:?}: {}\n", rule.as_rule(), rule.as_str());
+                print_rule_tree(rule.into_inner(), tabs + 1)
+             }
+         },
+    }
+}
+
+///Turns a parse result into a GabcFile. This relies on unchecked unwrap() calls that should not
+///fail because of the characteristics of the pest PEG.
 fn parsed_file_to_struct<'b>(mut parsed_file: pest::iterators::Pairs<'b, Rule>) -> GabcFile<'b> {
     let mut notes: Vec<Note> = Vec::new();
     let mut attributes: Vec<(&str, &str)> = Vec::new();
