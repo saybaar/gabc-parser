@@ -55,6 +55,26 @@ pub fn parse_to_struct(filename: &str) -> GabcFile {
     output
 }
 
+
+fn gabc_to_absolute_pitch (gabc_pos: char, clef: &str) -> &str {
+    assert!(gabc_pos >= 'a' && gabc_pos <= 'm');
+    let ly_notes = vec!["a,", "b,", "c", "d", "e", "f", "g", "a", "b", "c'", "d'", "e'", "f'", "g'", "a'", "b'", "c''", "d''", "e''", "f''", "g''", "a'''"];
+    let start_index = match clef {
+        "c1" => 6,
+        "c2" => 4,
+        "c3" => 2,
+        "c4" => 0, 
+        "f1" => 9,
+        "f2" => 7,
+        "f3" => 5,
+        "f4" => 3,
+        x => panic!("invalid clef: {}", x),
+    };
+    let position = gabc_pos as usize - 'a' as usize;
+    assert!(position < ly_notes.len());
+    return ly_notes.get(position + start_index).unwrap();
+}
+
 ///Turns a parse result into a GabcFile. This relies on unchecked unwrap() calls that should not
 ///fail because of the characteristics of the pest PEG.
 fn parsed_file_to_struct<'b>(mut parsed_file: pest::iterators::Pairs<'b, Rule>) -> GabcFile<'b> {
