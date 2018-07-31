@@ -42,20 +42,19 @@ pub fn print_rule_tree(rules: pest::iterators::Pairs<Rule>, tabs: usize) {
     }
 }
 
+///Reads a filename and parses it into a GabcFile
 pub fn parse_to_struct(filename: &str) -> GabcFile {
     let parse_result = GABCParser::parse(Rule::file, &filename);
     let output: GabcFile;
     match parse_result {
         Err(e) => { println!("Parse error: {}", e);
                     std::process::exit(1); },
-        Ok(pairs) => {
-            //print_rule_tree(pairs.clone(), 0);
-                       output = parsed_file_to_struct(pairs);}
+        Ok(pairs) => { output = parsed_file_to_struct(pairs); }
     }
     output
 }
 
-
+///Transforms a gabc note position under a specific clef to an absolute musical pitch
 fn gabc_to_absolute_pitch (gabc_pos: char, clef: &str) -> &str {
     assert!(gabc_pos >= 'a' && gabc_pos <= 'm');
     let ly_notes = vec!["a,", "b,", "c", "d", "e", "f", "g", "a", "b", "c'", "d'", "e'", "f'", "g'", "a'", "b'", "c''", "d''", "e''", "f''", "g''", "a'''"];
