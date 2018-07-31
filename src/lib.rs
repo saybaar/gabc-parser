@@ -2,12 +2,13 @@ extern crate itertools;
 extern crate pest;
 #[macro_use]
 extern crate pest_derive;
+extern crate serde;
+extern crate serde_json;
+#[macro_use]
+extern crate serde_derive;
 
 use itertools::Itertools;
 use pest::Parser;
-use std::env;
-use std::fs::File;
-use std::io::Read;
 
 //-----------------------------------------------------------------------
 //Pest boilerplate from the book (https://pest-parser.github.io/book/)
@@ -20,46 +21,38 @@ pub struct GABCParser;
 
 //-----------------------------------------------------------------------
 
-#[derive(Debug)]
-struct Note<'a> {
-    text: &'a str,
-    music: Vec<&'a str>,
+#[derive(Debug, Serialize)]
+pub struct Note<'a> {
+    pub text: &'a str,
+    pub music: Vec<&'a str>,
 }
 
-struct GabcFile<'a> {
-    attributes: Vec<(&'a str, &'a str)>,
-    notes: Vec<Note<'a>>,
-}
-
-fn main() {
-    let first = env::args().nth(1).expect("Please supply a filename");
-    let mut file = File::open(&first).expect("Error opening file");
-    let mut text = String::new();
-    file.read_to_string(&mut text).expect("Error reading file");
-    //derived from example from the book:
-    let parse_result = GABCParser::parse(Rule::file, &text);
-    let output: GabcFile;
-    match parse_result {
-        Err(e) => { println!("Parse error: {}", e);
-                    std::process::exit(1); },
-        Ok(pairs) => { print_rule_tree(pairs.clone(), 0);
-                       output = parsed_file_to_struct(pairs);}
-    }
-    for attribute in output.attributes {
-        println!("Attribute: {:?}", attribute);
-    }
-    for note in output.notes {
-        println!("Note: {:?}", note);
-    }
+#[derive(Serialize)]
+pub struct GabcFile<'a> {
+    pub attributes: Vec<(&'a str, &'a str)>,
+    pub notes: Vec<Note<'a>>,
 }
 
 ///Pretty-print a parse output tree
-fn print_rule_tree(rules: pest::iterators::Pairs<Rule>, tabs: usize) {
+pub fn print_rule_tree(rules: pest::iterators::Pairs<Rule>, tabs: usize) {
     for rule in rules {
         for _ in 0..tabs { print!("\t"); }
         print!("{:?}: {}\n", rule.as_rule(), rule.as_str());
         print_rule_tree(rule.into_inner(), tabs + 1)
     }
+}
+
+pub fn parse_to_struct(filename: &str) -> GabcFile {
+    let parse_result = GABCParser::parse(Rule::file, &filename);
+    let output: GabcFile;
+    match parse_result {
+        Err(e) => { println!("Parse error: {}", e);
+                    std::process::exit(1); },
+        Ok(pairs) => {
+            //print_rule_tree(pairs.clone(), 0);
+                       output = parsed_file_to_struct(pairs);}
+    }
+    output
 }
 
 ///Turns a parse result into a GabcFile. This relies on unchecked unwrap() calls that should not
