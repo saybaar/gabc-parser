@@ -6,7 +6,8 @@ attribute_value = { (!(":"|";") ~ any)* }
 
 
 clef = { ("c" | "f") ~ ('1'..'4') }
-note = { position ~ suffix? }
+note = { prefix? ~ position ~ suffix? }
+prefix = { ("placeholder") }
 position = { ('a'..'m') }
 suffix = { ("~" | ">" | "<" | "v" | "V" | "o~" | "o<" | "o" | "w" | "s<" | "s") }
 syllable = { string ~ "(" ~ (clef | note+) ~ ")" }
