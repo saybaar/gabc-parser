@@ -54,6 +54,17 @@ pub fn parse_to_struct(filename: &str) -> GabcFile {
     output
 }
 
+///Reads a filename and parses it into JSON
+pub fn parse_to_json(filename: &str) -> String {
+    serde_json::to_string(&parse_to_struct(filename)).unwrap()
+}
+
+pub fn parse_to_lilypond(filename: &str) -> String {
+    let notes = "abcdefg";
+    let text = "lorem ipsum dolor sit amet";
+    format!("{}{}{}{}{}", LY_1, notes, LY_2, text, LY_3)
+}
+
 ///Transforms a gabc note position under a specific clef to an absolute musical pitch
 fn gabc_to_absolute_pitch (gabc_pos: char, clef: &str) -> &str {
     assert!(gabc_pos >= 'a' && gabc_pos <= 'm');
@@ -62,7 +73,7 @@ fn gabc_to_absolute_pitch (gabc_pos: char, clef: &str) -> &str {
         "c1" => 6,
         "c2" => 4,
         "c3" => 2,
-        "c4" => 0, 
+        "c4" => 0,
         "f1" => 9,
         "f2" => 7,
         "f3" => 5,
@@ -95,3 +106,46 @@ fn parsed_file_to_struct<'b>(mut parsed_file: pest::iterators::Pairs<'b, Rule>) 
     }
     GabcFile { attributes, notes }
 }
+
+static LY_1: &'static str =
+r#"\include "gregorian.ly"
+
+chant = \relative c' {
+  \set Score.timing = ##f
+  "#;
+  // f4 a2 \divisioMinima
+  // g4 b a2 f2 \divisioMaior
+  // g4( f) f( g) a2 \finalis
+static LY_2: &'static str =
+r#"
+}
+
+verba = \lyricmode {
+  "#;
+  // Lo -- rem ip -- sum do -- lor sit a -- met
+static LY_3: &'static str =
+r#"
+}
+
+\score {
+  \new Staff <<
+    \new Voice = "melody" \chant
+    \new Lyrics = "one" \lyricsto melody \verba
+  >>
+  \layout {
+    \context {
+      \Staff
+      \remove "Time_signature_engraver"
+      \remove "Bar_engraver"
+      \hide Stem
+    }
+    \context {
+      \Voice
+      \override Stem.length = #0
+    }
+    \context {
+      \Score
+      barAlways = ##t
+    }
+  }
+}"#;
