@@ -24,8 +24,9 @@ pub struct GABCParser;
 #[derive(Debug, Serialize)]
 pub struct Note<'a> {
     pub prefix: &'a str,
-    pub pitch: char,
+    pub position: char,
     pub suffix: &'a str,
+    pub current_clef: &'a str,
 }
 
 #[derive(Debug, Serialize)]
@@ -74,14 +75,13 @@ pub fn parse_to_json(filename: &str) -> String {
 
 pub fn parse_to_lilypond(filename: &str) -> String {
     let full_struct = parse_to_struct(filename);
-    let clef = "c1";
     let mut notes = String::new();
     let mut text = String::new();
     for syllable in &full_struct.syllables {
         text.push_str(syllable.text);
         text.push_str(" ");
         for tone in &syllable.music {
-            notes.push_str(gabc_to_absolute_pitch(tone.pitch, clef));
+            notes.push_str(gabc_to_absolute_pitch(tone.position, tone.current_clef));
             notes.push_str(" ");
         }
     }
@@ -113,6 +113,7 @@ fn gabc_to_absolute_pitch (gabc_pos: char, clef: &str) -> &str {
 fn parsed_file_to_struct<'b>(mut parsed_file: pest::iterators::Pairs<'b, Rule>) -> GabcFile<'b> {
     let mut syllables: Vec<Syllable> = Vec::new();
     let mut attributes: Vec<(&str, &str)> = Vec::new();
+    let mut current_clef = "no clef set";
     for pair in parsed_file.next().unwrap().into_inner() {
         match pair.as_rule() {
             Rule::attribute => {
@@ -128,20 +129,21 @@ fn parsed_file_to_struct<'b>(mut parsed_file: pest::iterators::Pairs<'b, Rule>) 
                     match pair.as_rule() {
                         Rule::note => {
                             let mut prefix = "";
-                            let mut pitch = 'z';
+                            let mut position = 'z';
                             let mut suffix = "";
                             for p in pair.into_inner() {
                                 match &p.as_rule() {
                                     Rule::prefix => prefix = p.as_str(),
-                                    Rule::position => pitch = p.as_str().chars().next().unwrap(),
+                                    Rule::position => position = p.as_str().chars().next().unwrap(),
                                     Rule::suffix => suffix = p.as_str(),
-                                    _ => panic!("that's not part of a note!")
+                                    _ => unreachable!("impossible note sub-rule")
                                 }
                             }
-                            music.push(Note { prefix, pitch, suffix });
+                            assert!(position != 'z'); //note rule MUST have a position sub-rule
+                            music.push(Note { prefix, position, suffix, current_clef });
                         },
                         Rule::clef => {
-
+                            current_clef = pair.as_str();
                         },
                         _ => unreachable!("impossible syllable sub-rule"),
                     }
