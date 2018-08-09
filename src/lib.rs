@@ -64,6 +64,30 @@ pub struct Syllable<'a> {
     pub music: Vec<Note<'a>>,
 }
 
+impl<'a> Syllable<'a> {
+    pub fn ly_notes(&self) -> String {
+        let mut result = String::new();
+        let mut notes_iter = self.music.iter();
+        match notes_iter.next() {
+            None => return result,
+            Some(s) => result.push_str(s.absolute_pitch()),
+        }
+        match notes_iter.next() {
+            None => return result,
+            Some(s) => {
+                result.push_str("(");
+                result.push_str(s.absolute_pitch());
+            },
+        }
+        while let Some(s) = notes_iter.next() {
+            result.push_str(" ");
+            result.push_str(s.absolute_pitch());
+        }
+        result.push_str(")");
+        result
+    }
+}
+
 #[derive(Serialize)]
 pub struct GabcFile<'a> {
     pub attributes: Vec<(&'a str, &'a str)>,
@@ -84,10 +108,8 @@ impl<'a> GabcFile<'a> {
         for syllable in &self.syllables {
             text.push_str(syllable.text);
             text.push_str(" ");
-            for tone in &syllable.music {
-                notes.push_str(tone.absolute_pitch());
-                notes.push_str(" ");
-            }
+            notes.push_str(&syllable.ly_notes());
+            notes.push_str("\n");
         }
         format!("{}{}{}{}{}", LY_1, notes, LY_2, text, LY_3)
     }
