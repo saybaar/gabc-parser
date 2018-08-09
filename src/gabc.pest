@@ -6,10 +6,11 @@ attribute_value = { (!(":"|";") ~ any)* }
 
 
 clef = { ("c" | "f") ~ ('1'..'4') }
+separator = { ( ";" ~ ('1'..'6') | ";" | "::" | ":?" | ":'" | ":" | ",_" | ",0" | "," | "'" ) }
 note = { prefix? ~ position ~ suffix? }
-prefix = { ("placeholder") }
+prefix = { "placeholder" }
 position = { ('a'..'m') }
 suffix = { ("~" | ">" | "<" | "v" | "V" | "o~" | "o<" | "o" | "w" | "s<" | "s") }
-syllable = { string ~ "(" ~ (clef | note+) ~ ")" }
+syllable = { string ~ "(" ~ (clef | note | separator)+ ~ ")" }
 
 string = { ('a'..'z' | 'A'..'Z' | " ")* }

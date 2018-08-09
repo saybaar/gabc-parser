@@ -59,9 +59,24 @@ impl<'a> Note<'a> {
 }
 
 #[derive(Debug, Serialize)]
+pub enum NoteElem<'a> {
+    Separator(&'a str),
+    Note(Note<'a>),
+}
+
+impl<'a> NoteElem<'a> {
+    pub fn to_ly(&self) -> &str {
+        match self {
+            NoteElem::Separator(s) => return "|",
+            NoteElem::Note(n) => return n.absolute_pitch(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
 pub struct Syllable<'a> {
     pub text: &'a str,
-    pub music: Vec<Note<'a>>,
+    pub music: Vec<NoteElem<'a>>,
 }
 
 impl<'a> Syllable<'a> {
@@ -70,18 +85,18 @@ impl<'a> Syllable<'a> {
         let mut notes_iter = self.music.iter();
         match notes_iter.next() {
             None => return result,
-            Some(s) => result.push_str(s.absolute_pitch()),
+            Some(s) => result.push_str(s.to_ly()),
         }
         match notes_iter.next() {
             None => return result,
             Some(s) => {
                 result.push_str("(");
-                result.push_str(s.absolute_pitch());
+                result.push_str(s.to_ly());
             },
         }
         while let Some(s) = notes_iter.next() {
             result.push_str(" ");
-            result.push_str(s.absolute_pitch());
+            result.push_str(s.to_ly());
         }
         result.push_str(")");
         result
@@ -163,7 +178,7 @@ fn parsed_file_to_struct<'b>(mut parsed_file: pest::iterators::Pairs<'b, Rule>) 
             Rule::syllable => {
                 let mut syllable_components = pair.into_inner();
                 let text = syllable_components.next().unwrap().as_str();
-                let mut music: Vec<Note> = Vec::new();
+                let mut music: Vec<NoteElem> = Vec::new();
                 while let Some(pair) = syllable_components.next() {
                     match pair.as_rule() {
                         Rule::note => {
@@ -179,12 +194,16 @@ fn parsed_file_to_struct<'b>(mut parsed_file: pest::iterators::Pairs<'b, Rule>) 
                                 }
                             }
                             assert!(position != 'z'); //note rule MUST have a position sub-rule
-                            music.push(Note {
-                                prefix,
-                                position,
-                                suffix,
-                                current_clef,
-                            });
+                            music.push(NoteElem::Note(
+                                Note {
+                                    prefix,
+                                    position,
+                                    suffix,
+                                    current_clef,
+                                }));
+                        }
+                        Rule::separator => {
+                            music.push(NoteElem::Separator(pair.as_str()));
                         }
                         Rule::clef => {
                             current_clef = pair.as_str();
