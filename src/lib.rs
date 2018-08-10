@@ -36,7 +36,6 @@ pub struct Note<'a> {
 
 impl<'a> Note<'a> {
     pub fn absolute_pitch(&self) -> &str {
-        assert!(self.position >= 'a' && self.position <= 'm');
         let ly_notes = vec![
             "a,", "b,", "c", "d", "e", "f", "g", "a", "b", "c'", "d'", "e'", "f'", "g'", "a'",
             "b'", "c''", "d''", "e''", "f''", "g''", "a'''",
@@ -52,7 +51,7 @@ impl<'a> Note<'a> {
             "f4" => 3,
             x => panic!("invalid clef: {}", x),
         };
-        let position = self.position as usize - 'a' as usize;
+        let position = self.position.to_lowercase().next().unwrap() as usize - 'a' as usize;
         assert!(position < ly_notes.len());
         return ly_notes.get(position + start_index).unwrap();
     }
@@ -61,14 +60,22 @@ impl<'a> Note<'a> {
 #[derive(Debug, Serialize)]
 pub enum NoteElem<'a> {
     Separator(&'a str),
+    Barline(&'a str),
     Note(Note<'a>),
 }
 
 impl<'a> NoteElem<'a> {
     pub fn to_ly(&self) -> &str {
         match self {
-            NoteElem::Separator(s) => return "|",
-            NoteElem::Note(n) => return n.absolute_pitch(),
+            NoteElem::Barline(s) => match *s {
+                "'" => "\\divisioMinima",
+                ";" => "\\divisioMaior",
+                ":" => "\\divisioMaior",
+                "::" => "\\finalis",
+                _ => "\\divisioMinima",
+            },
+            NoteElem::Note(n) => n.absolute_pitch(),
+            NoteElem::Separator(_) => "",
         }
     }
 }
@@ -202,6 +209,9 @@ fn parsed_file_to_struct<'b>(mut parsed_file: pest::iterators::Pairs<'b, Rule>) 
                                     current_clef,
                                 }));
                         }
+                        Rule::barline => {
+                            music.push(NoteElem::Separator(pair.as_str()));
+                        }
                         Rule::separator => {
                             music.push(NoteElem::Separator(pair.as_str()));
                         }
@@ -225,7 +235,7 @@ fn parsed_file_to_struct<'b>(mut parsed_file: pest::iterators::Pairs<'b, Rule>) 
 
 static LY_1: &'static str = r#"\include "gregorian.ly"
 
-chant = \relative c' {
+chant = \absolute {
   \set Score.timing = ##f
   "#;
 // f4 a2 \divisioMinima

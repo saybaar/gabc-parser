@@ -1,16 +1,16 @@
-file = { soi ~ (attribute ~ "\n")* ~ "%%\n" ~ syllable* ~ "\n"* ~ eoi }
+file = { soi ~ (attribute ~ "\n")* ~ "%%\n" ~ (syllable | "\n")* ~ "\n"* ~ eoi }
 
 attribute = { attribute_key ~ ":" ~ attribute_value ~ ";"}
 attribute_key = { (!(":"|";") ~ any)* }
 attribute_value = { (!(":"|";") ~ any)* }
 
-
 clef = { ("c" | "f") ~ ('1'..'4') }
-separator = { ( ";" ~ ('1'..'6') | ";" | "::" | ":?" | ":'" | ":" | ",_" | ",0" | "," | "'" ) }
-note = { prefix? ~ position ~ suffix? }
+barline = { ( ";" ~ ('1'..'6') | ";" | "::" | ":?" | ":'" | ":" | ",_" | ",0" | "," | "'" ) }
+separator = { ( "!" | "@" | "/" | "//" | "/0" | "/[" ~ "-"? ~ ('0'..'9') ~ "]"  | " " ) }
+note = { prefix* ~ position ~ suffix* }
 prefix = { "placeholder" }
-position = { ('a'..'m') }
-suffix = { ("~" | ">" | "<" | "v" | "V" | "o~" | "o<" | "o" | "w" | "s<" | "s") }
-syllable = { string ~ "(" ~ (clef | note | separator)+ ~ ")" }
+position = { ('a'..'m') | ('A'..'M') }
+suffix = { ("~" | ">" | "<" | "v" | "V" | "o~" | "o<" | "o" | "w" | "s<" | "s" | "x" | "y" | "#" | "." | ".." | "'" | "_" ) }
+syllable = { string ~ "(" ~ (clef | note | barline | separator)* ~ ")" }
 
-string = { ('a'..'z' | 'A'..'Z' | " ")* }
+string = { (!("(") ~ any)* }
