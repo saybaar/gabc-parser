@@ -12,8 +12,8 @@ extern crate serde_json;
 extern crate serde_derive;
 
 use itertools::Itertools;
-use pest::Parser;
 use pest::iterators::Pairs;
+use pest::Parser;
 
 //-----------------------------------------------------------------------
 //Pest boilerplate from the book (https://pest-parser.github.io/book/)
@@ -99,7 +99,7 @@ impl<'a> Syllable<'a> {
             Some(s) => {
                 result.push_str("(");
                 result.push_str(s.to_ly());
-            },
+            }
         }
         while let Some(s) = notes_iter.next() {
             result.push_str(" ");
@@ -107,6 +107,19 @@ impl<'a> Syllable<'a> {
         }
         result.push_str(")");
         result
+    }
+    pub fn ly_text(&self) -> String {
+        let mut flag = false;
+        for ne in &self.music {
+            if let NoteElem::Note(_) = ne {
+                flag = true;
+            }
+        }
+        if !flag {
+            return format!(" \\set stanza = \"{}\" ", &self.text);
+        } else {
+            return self.text.to_string();
+        }
     }
 }
 
@@ -126,14 +139,26 @@ impl<'a> GabcFile<'a> {
     }
     pub fn as_lilypond(&self) -> String {
         let mut notes = String::new();
-        let mut text = String::new();
         for syllable in &self.syllables {
-            text.push_str(syllable.text);
-            text.push_str(" ");
             notes.push_str(&syllable.ly_notes());
             notes.push_str("\n");
         }
-        format!("{}{}{}{}{}", LY_1, notes, LY_2, text, LY_3)
+        format!("{}{}{}{}{}", LY_1, notes, LY_2, &self.ly_lyrics(), LY_3)
+    }
+    pub fn ly_lyrics(&self) -> String {
+        let mut result = String::new();
+        let syllable_iter = &mut self.syllables.iter().peekable();
+        while let Some(syll) = syllable_iter.next() {
+            let s = &syll.ly_text();
+            result.push_str(&s);
+            if let Some(next_syll) = syllable_iter.peek() {
+                let next_s = next_syll.ly_text();
+                if s.trim_right() == s && next_s.trim_left() == next_s {
+                    result.push_str(" -- ");
+                }
+            }
+        }
+        result
     }
 }
 
@@ -201,16 +226,15 @@ fn parsed_file_to_struct<'b>(mut parsed_file: pest::iterators::Pairs<'b, Rule>) 
                                 }
                             }
                             assert!(position != 'z'); //note rule MUST have a position sub-rule
-                            music.push(NoteElem::Note(
-                                Note {
-                                    prefix,
-                                    position,
-                                    suffix,
-                                    current_clef,
-                                }));
+                            music.push(NoteElem::Note(Note {
+                                prefix,
+                                position,
+                                suffix,
+                                current_clef,
+                            }));
                         }
                         Rule::barline => {
-                            music.push(NoteElem::Separator(pair.as_str()));
+                            music.push(NoteElem::Barline(pair.as_str()));
                         }
                         Rule::separator => {
                             music.push(NoteElem::Separator(pair.as_str()));
