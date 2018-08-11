@@ -115,7 +115,7 @@ impl<'a> Syllable<'a> {
                 flag = true;
             }
         }
-        if !flag {
+        if !flag && !(self.text.trim() == "") {
             return format!(" \\set stanza = \"{}\" ", &self.text);
         } else {
             return self.text.to_string();
