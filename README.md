@@ -11,8 +11,8 @@ use std::io::Read;
 ## Limitations
 This library is in a prototype stage and doesn't correctly process all gabc syntax. Common gabc features not yet supported include:
 * Flat clefs (e.g. "cb2")
-*
-Auto-generated Lilypond output may require adjustments, especially to correct the transposition range. Lilypond conversion doesn't yet take gabc note shapes or rhythmic signs into account; this may be implemented in future versions. 
+* gabc comments (which start with %)
+Auto-generated Lilypond output may require adjustments, especially to correct the transposition range. Lilypond conversion doesn't yet take gabc note shapes or rhythmic signs into account; this may be implemented in future versions.
 
 ## Related work
 * gabctk: A toolkit for gabc, including conversion to Lilypond, abc, midi, and others. Written in Python and documented only in French. <https://github.com/jperon/gabctk>
