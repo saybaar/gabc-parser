@@ -86,6 +86,21 @@ pub enum NoteElem<'a> {
 impl<'a> NoteElem<'a> {
     ///Get the Lilypond representation of this note element. gabc spacers (e.g. "/") are ignored;
     ///Note suffixes (e.g. ".") that have Lilypond equivalents are not yet implemented.
+    ///```
+    ///# use gabc_parser::*;
+    ///let n = Note {
+    ///     prefix: "",
+    ///     suffix: "..",
+    ///     position: 'h',
+    ///     current_clef: "c1",
+    ///};
+    ///let ne = NoteElem::Note(n);
+    ///assert_eq!(ne.to_ly(), "g'");
+    ///let s = NoteElem::Spacer("/");
+    ///assert_eq!(s.to_ly(), "");
+    ///let b = NoteElem::Barline(":");
+    ///assert_eq!(b.to_ly(), "\\divisioMaior");
+    ///```
     pub fn to_ly(&self) -> &str {
         match self {
             NoteElem::Barline(s) => match *s {
@@ -101,10 +116,12 @@ impl<'a> NoteElem<'a> {
     }
 }
 
-///Struct representing a gabc syllable with text and music, for example "Po(eh/hi)"
+///Struct representing a gabc syllable with text and music, e.g. "Po(eh/hi)"
 #[derive(Debug, Serialize)]
 pub struct Syllable<'a> {
+    ///Text in this syllable, e.g. "Po"
     pub text: &'a str,
+    ///Music in this syllable, e.g. "eh/hi", as a Vec of NoteElems
     pub music: Vec<NoteElem<'a>>,
 }
 
