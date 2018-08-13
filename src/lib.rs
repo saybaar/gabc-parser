@@ -41,15 +41,16 @@ pub struct Note<'a> {
 }
 
 impl<'a> Note<'a> {
+    ///Create a new note from well-formed gabc input.
+    pub fn new<'b>(gabc_input: &'b str, current_clef: &'b str) -> Note<'b> {
+        let mut parse_result = parse_gabc(gabc_input, Rule::note);
+        parsed_note_to_struct(parse_result.next().unwrap(), current_clef)
+    }
     ///Get the absolute pitch of this note in modern (Lilypond) notation, between a, and a'''.
     ///Assumes that the clef indicates middle C or the F above middle C.
     ///```
-    ///let n = gabc_parser::Note {
-    ///     prefix: "",
-    ///     suffix: "..",
-    ///     position: 'h',
-    ///     current_clef: "c1",
-    ///};
+    ///# use gabc_parser::*;
+    ///let n = Note::new("h..", "c1");
     ///assert_eq!(n.absolute_pitch(), "g'");
     ///```
     pub fn absolute_pitch(&self) -> &str {
@@ -88,13 +89,7 @@ impl<'a> NoteElem<'a> {
     ///Note suffixes (e.g. ".") that have Lilypond equivalents are not yet implemented.
     ///```
     ///# use gabc_parser::*;
-    ///let n = Note {
-    ///     prefix: "",
-    ///     suffix: "..",
-    ///     position: 'h',
-    ///     current_clef: "c1",
-    ///};
-    ///let ne = NoteElem::Note(n);
+    ///let ne = NoteElem::Note(Note::new("h..", "c1"));
     ///assert_eq!(ne.to_ly(), "g'");
     ///let s = NoteElem::Spacer("/");
     ///assert_eq!(s.to_ly(), "");
@@ -126,7 +121,17 @@ pub struct Syllable<'a> {
 }
 
 impl<'a> Syllable<'a> {
+    ///Create a new syllable from well-formed gabc input.
+    pub fn new<'b>(gabc_input: &'b str, current_clef: &'b str) -> Syllable<'b> {
+        let mut parse_result = parse_gabc(gabc_input, Rule::syllable);
+        parsed_syllable_to_struct(parse_result.next().unwrap(), current_clef)
+    }
     ///Translate this syllable's music string into a tied sequence of Lilypond notes.
+    ///```
+    ///# use gabc_parser::*;
+    ///let s = Syllable::new("Po(eh/hi)", "c3");
+    ///assert_eq!(s.ly_notes(), "g(c' c' d')");
+    ///```
     pub fn ly_notes(&self) -> String {
         let mut result = String::new();
         let mut notes_iter = self.music.iter();
@@ -142,8 +147,9 @@ impl<'a> Syllable<'a> {
             }
         }
         while let Some(s) = notes_iter.next() {
-            result.push_str(" ");
-            result.push_str(s.to_ly());
+            let t = s.to_ly();
+            if t.trim() != "" { result.push_str(" "); };
+            result.push_str(t);
         }
         result.push_str(")");
         result
@@ -176,7 +182,7 @@ pub struct GabcFile<'a> {
 impl<'a> GabcFile<'a> {
     ///Create a new GabcFile from well-formed gabc input.
     pub fn new(gabc_input: &str) -> GabcFile {
-        let parse_result = parse_gabc_file(gabc_input);
+        let parse_result = parse_gabc(gabc_input, Rule::file);
         parsed_file_to_struct(parse_result)
     }
     ///Translate this GabcFile into JSON.
@@ -215,8 +221,8 @@ impl<'a> GabcFile<'a> {
 
 ///Parses a gabc file into pest's Pairs type. This is useful if you want to process the raw pairs
 ///using a mechanism other than the GabcFile struct.
-pub fn parse_gabc_file(text: &str) -> Pairs<Rule> {
-    let parse_result = GABCParser::parse(Rule::file, &text);
+pub fn parse_gabc(text: &str, rule: Rule) -> Pairs<Rule> {
+    let parse_result = GABCParser::parse(rule, &text);
     match parse_result {
         Err(e) => {
             println!("Parse error: {}", e);
@@ -267,24 +273,7 @@ fn parsed_file_to_struct<'b>(mut parsed_file: pest::iterators::Pairs<'b, Rule>) 
                 while let Some(pair) = syllable_components.next() {
                     match pair.as_rule() {
                         Rule::note => {
-                            let mut prefix = "";
-                            let mut position = 'z';
-                            let mut suffix = "";
-                            for p in pair.into_inner() {
-                                match &p.as_rule() {
-                                    Rule::prefix => prefix = p.as_str(),
-                                    Rule::position => position = p.as_str().chars().next().unwrap(),
-                                    Rule::suffix => suffix = p.as_str(),
-                                    _ => unreachable!("impossible note sub-rule"),
-                                }
-                            }
-                            assert!(position != 'z'); //note rule MUST have a position sub-rule
-                            music.push(NoteElem::Note(Note {
-                                prefix,
-                                position,
-                                suffix,
-                                current_clef,
-                            }));
+                            music.push(NoteElem::Note(parsed_note_to_struct(pair, current_clef)));
                         }
                         Rule::barline => {
                             music.push(NoteElem::Barline(pair.as_str()));
@@ -298,7 +287,6 @@ fn parsed_file_to_struct<'b>(mut parsed_file: pest::iterators::Pairs<'b, Rule>) 
                         _ => unreachable!("impossible syllable sub-rule"),
                     }
                 }
-                //let strings: Vec<&str> = pair.into_inner().map(|x| x.as_str()).collect();
                 syllables.push(Syllable { text, music }); //strings[1..].to_vec() } );
             }
             _ => {}
@@ -308,6 +296,48 @@ fn parsed_file_to_struct<'b>(mut parsed_file: pest::iterators::Pairs<'b, Rule>) 
         attributes,
         syllables,
     }
+}
+
+fn parsed_syllable_to_struct<'a>(parsed_syllable: pest::iterators::Pair<'a, Rule>, current_clef: &'a str) -> Syllable<'a> {
+    let mut syllable_components = parsed_syllable.into_inner();
+    let text = syllable_components.next().unwrap().as_str();
+    let mut music: Vec<NoteElem> = Vec::new();
+    while let Some(pair) = syllable_components.next() {
+        match pair.as_rule() {
+            Rule::note => {
+                music.push(NoteElem::Note(parsed_note_to_struct(pair, current_clef)));
+            }
+            Rule::barline => {
+                music.push(NoteElem::Barline(pair.as_str()));
+            }
+            Rule::spacer => {
+                music.push(NoteElem::Spacer(pair.as_str()));
+            }
+            _ => unreachable!("impossible syllable sub-rule"),
+        }
+    }
+    Syllable { text, music }
+}
+
+fn parsed_note_to_struct<'b>(parsed_note: pest::iterators::Pair<'b, Rule>, current_clef: &'b str) -> Note<'b> {
+        let mut prefix = "";
+        let mut position = 'z';
+        let mut suffix = "";
+        for p in parsed_note.into_inner() {
+            match &p.as_rule() {
+                Rule::prefix => prefix = p.as_str(),
+                Rule::position => position = p.as_str().chars().next().unwrap(),
+                Rule::suffix => suffix = p.as_str(),
+                _ => unreachable!("impossible note sub-rule"),
+            }
+        }
+        assert!(position != 'z'); //note rule MUST have a position sub-rule
+        Note {
+            prefix,
+            position,
+            suffix,
+            current_clef,
+        }
 }
 
 static LY_1: &'static str = r#"\include "gregorian.ly"
