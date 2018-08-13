@@ -6,11 +6,11 @@ attribute_value = { (!(":"|";") ~ any)* }
 
 clef = { ("c" | "f") ~ ('1'..'4') }
 barline = { ( ";" ~ ('1'..'6') | ";" | "::" | ":?" | ":'" | ":" | ",_" | ",0" | "," | "'" ) }
-separator = { ( "!" | "@" | "/" | "//" | "/0" | "/[" ~ "-"? ~ ('0'..'9') ~ "]"  | " " ) }
+spacer = { ( "!" | "@" | "/" | "//" | "/0" | "/[" ~ "-"? ~ ('0'..'9') ~ "]"  | " " ) }
 note = { prefix* ~ position ~ suffix* }
-prefix = { "placeholder" }
+prefix = { "-" }
 position = { ('a'..'m') | ('A'..'M') }
 suffix = { ("~" | ">" | "<" | "v" | "V" | "o~" | "o<" | "o" | "w" | "s<" | "s" | "x" | "y" | "#" | "." | ".." | "'" | "_" ) }
-syllable = { string ~ "(" ~ (clef | note | barline | separator)* ~ ")" }
+syllable = { string ~ "(" ~ (clef | note | barline | spacer)* ~ ")" }
 
 string = { (!("(") ~ any)* }

@@ -26,15 +26,32 @@ pub struct GABCParser;
 
 //-----------------------------------------------------------------------
 
+///Struct representing a gabc note.
 #[derive(Debug, Serialize)]
 pub struct Note<'a> {
+    ///Entire prefix of the note (uncommon, only implemented here for "-" which indicates an initio
+    ///debilis)
     pub prefix: &'a str,
+    ///Main character of the note: its position in the gabc staff (a-m)
     pub position: char,
+    ///Entire suffix of the note, including shape indicators and rhythmic signs, e.g. "V."
     pub suffix: &'a str,
+    ///Clef governing this note in its original context
     pub current_clef: &'a str,
 }
 
 impl<'a> Note<'a> {
+    ///Get the absolute pitch of this note in modern (Lilypond) notation, between a, and a'''.
+    ///Assumes that the clef indicates middle C or the F above middle C.
+    ///```
+    ///let n = gabc_parser::Note {
+    ///     prefix: "",
+    ///     suffix: "..",
+    ///     position: 'h',
+    ///     current_clef: "c1",
+    ///};
+    ///assert_eq!(n.absolute_pitch(), "g'");
+    ///```
     pub fn absolute_pitch(&self) -> &str {
         let ly_notes = vec![
             "a,", "b,", "c", "d", "e", "f", "g", "a", "b", "c'", "d'", "e'", "f'", "g'", "a'",
@@ -57,14 +74,18 @@ impl<'a> Note<'a> {
     }
 }
 
+///Any element that can appear in the music for a given syllable, including bars (e.g. ":"),
+///separators (e.g. "/"), and Notes
 #[derive(Debug, Serialize)]
 pub enum NoteElem<'a> {
-    Separator(&'a str),
+    Spacer(&'a str),
     Barline(&'a str),
     Note(Note<'a>),
 }
 
 impl<'a> NoteElem<'a> {
+    ///Get the Lilypond representation of this note element. gabc spacers (e.g. "/") are ignored;
+    ///Note suffixes (e.g. ".") that have Lilypond equivalents are not yet implemented.
     pub fn to_ly(&self) -> &str {
         match self {
             NoteElem::Barline(s) => match *s {
@@ -75,11 +96,12 @@ impl<'a> NoteElem<'a> {
                 _ => "\\divisioMinima",
             },
             NoteElem::Note(n) => n.absolute_pitch(),
-            NoteElem::Separator(_) => "",
+            NoteElem::Spacer(_) => "",
         }
     }
 }
 
+///Struct representing a gabc syllable with text and music, for example "Po(eh/hi)"
 #[derive(Debug, Serialize)]
 pub struct Syllable<'a> {
     pub text: &'a str,
@@ -87,6 +109,7 @@ pub struct Syllable<'a> {
 }
 
 impl<'a> Syllable<'a> {
+    ///Translate this syllable's music string into a tied sequence of Lilypond notes.
     pub fn ly_notes(&self) -> String {
         let mut result = String::new();
         let mut notes_iter = self.music.iter();
@@ -108,6 +131,9 @@ impl<'a> Syllable<'a> {
         result.push_str(")");
         result
     }
+    ///Translate this syllable's text into Lilypond lyrics. If there are no Notes in this
+    ///syllable's music string, add "\set stanza = " to prevent Lilypond matching this text
+    ///to a note.
     pub fn ly_text(&self) -> String {
         let mut flag = false;
         for ne in &self.music {
@@ -123,20 +149,26 @@ impl<'a> Syllable<'a> {
     }
 }
 
-#[derive(Serialize)]
+///Struct representing an entire gabc file.
+#[derive(Debug, Serialize)]
 pub struct GabcFile<'a> {
     pub attributes: Vec<(&'a str, &'a str)>,
     pub syllables: Vec<Syllable<'a>>,
 }
 
 impl<'a> GabcFile<'a> {
+    ///Create a new GabcFile from well-formed gabc input.
     pub fn new(gabc_input: &str) -> GabcFile {
-        let parse_result = parse_file(gabc_input);
+        let parse_result = parse_gabc_file(gabc_input);
         parsed_file_to_struct(parse_result)
     }
+    ///Translate this GabcFile into JSON.
     pub fn as_json(&self) -> String {
         serde_json::to_string(self).unwrap()
     }
+    ///Translate this GabcFile into a well-formed Lilypond file, by translating its text and music
+    ///and inserting them into a template derived from
+    ///<http://lilypond.org/doc/v2.18/Documentation/snippets/templates#templates-ancient-notation-template-_002d-modern-transcription-of-gregorian-music>
     pub fn as_lilypond(&self) -> String {
         let mut notes = String::new();
         for syllable in &self.syllables {
@@ -145,6 +177,8 @@ impl<'a> GabcFile<'a> {
         }
         format!("{}{}{}{}{}", LY_1, notes, LY_2, &self.ly_lyrics(), LY_3)
     }
+    ///Extract the text of this file into well-formed Lilypond lyrics, inserting " -- " to join
+    ///syllables where appropriate.
     pub fn ly_lyrics(&self) -> String {
         let mut result = String::new();
         let syllable_iter = &mut self.syllables.iter().peekable();
@@ -162,8 +196,9 @@ impl<'a> GabcFile<'a> {
     }
 }
 
-//Parse a GABC file into pest's Pairs type
-pub fn parse_file(text: &str) -> Pairs<Rule> {
+///Parses a gabc file into pest's Pairs type. This is useful if you want to process the raw pairs
+///using a mechanism other than the GabcFile struct.
+pub fn parse_gabc_file(text: &str) -> Pairs<Rule> {
     let parse_result = GABCParser::parse(Rule::file, &text);
     match parse_result {
         Err(e) => {
@@ -176,12 +211,13 @@ pub fn parse_file(text: &str) -> Pairs<Rule> {
     }
 }
 
-//Pretty-print a parse output tree
+///Pretty string representation of a Pairs parse tree. Useful for directly debugging the output of
+///parse_gabc_file().
 pub fn debug_print(rules: Pairs<Rule>) -> String {
     print_rule_tree(rules, 0)
 }
 
-///Pretty-print a parse output tree (recursive version)
+///Pretty-print parsed Pairs (recursive version).
 fn print_rule_tree(rules: Pairs<Rule>, tabs: usize) -> String {
     let mut output = String::new();
     for rule in rules {
@@ -236,8 +272,8 @@ fn parsed_file_to_struct<'b>(mut parsed_file: pest::iterators::Pairs<'b, Rule>) 
                         Rule::barline => {
                             music.push(NoteElem::Barline(pair.as_str()));
                         }
-                        Rule::separator => {
-                            music.push(NoteElem::Separator(pair.as_str()));
+                        Rule::spacer => {
+                            music.push(NoteElem::Spacer(pair.as_str()));
                         }
                         Rule::clef => {
                             current_clef = pair.as_str();
@@ -259,14 +295,14 @@ fn parsed_file_to_struct<'b>(mut parsed_file: pest::iterators::Pairs<'b, Rule>) 
 
 static LY_1: &'static str = r#"\include "gregorian.ly"
 
-chant = \absolute {
+chant = \absolute { \transpose c c' {
   \set Score.timing = ##f
   "#;
 // f4 a2 \divisioMinima
 // g4 b a2 f2 \divisioMaior
 // g4( f) f( g) a2 \finalis
 static LY_2: &'static str = r#"
-}
+}}
 
 verba = \lyricmode {
   "#;

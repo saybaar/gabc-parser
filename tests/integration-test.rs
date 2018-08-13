@@ -4,8 +4,6 @@
 
 extern crate gabc_parser;
 use gabc_parser::*;
-use std::fs::File;
-use std::io::Read;
 
 #[test]
 fn test_absolute_pitch() {
@@ -26,7 +24,7 @@ fn test_syllable_to_ly() {
     };
     assert_eq!("\\divisioMaior", syllable.ly_notes());
 }
-
+/*
 #[test]
 fn test_bar() {
     let mut f = File::open("./tests/bar.gabc").unwrap();
@@ -35,3 +33,4 @@ fn test_bar() {
     let g = GabcFile::new(&s);
     assert_eq!("test", g.as_lilypond());
 }
+*/
