@@ -157,7 +157,6 @@ impl<'a> Syllable<'a> {
     ///Translate this syllable's text into Lilypond lyrics. If there are no Notes in this
     ///syllable's music string, add "\set stanza = " to prevent Lilypond matching this text
     ///to a note.
-    ///Translate this syllable's music string into a tied sequence of Lilypond notes.
     ///```
     ///# use gabc_parser::*;
     ///let s = Syllable::new("*()", "c3");
@@ -181,7 +180,9 @@ impl<'a> Syllable<'a> {
 ///Struct representing an entire gabc file.
 #[derive(Debug, Serialize)]
 pub struct GabcFile<'a> {
+    ///This file's attributes, e.g. "name: Populus Sion", as key/value tuples
     pub attributes: Vec<(&'a str, &'a str)>,
+    ///This file's Syllables
     pub syllables: Vec<Syllable<'a>>,
 }
 
