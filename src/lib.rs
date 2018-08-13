@@ -157,6 +157,12 @@ impl<'a> Syllable<'a> {
     ///Translate this syllable's text into Lilypond lyrics. If there are no Notes in this
     ///syllable's music string, add "\set stanza = " to prevent Lilypond matching this text
     ///to a note.
+    ///Translate this syllable's music string into a tied sequence of Lilypond notes.
+    ///```
+    ///# use gabc_parser::*;
+    ///let s = Syllable::new("*()", "c3");
+    ///assert_eq!(s.ly_text(), " \\set stanza = \"*\" ");
+    ///```
     pub fn ly_text(&self) -> String {
         let mut flag = false;
         for ne in &self.music {
@@ -253,7 +259,7 @@ fn print_rule_tree(rules: Pairs<Rule>, tabs: usize) -> String {
     output
 }
 
-///Turns a parse result into a GabcFile. This relies on unchecked unwrap() calls that should not
+///Turns a file parse result into a GabcFile. This relies on unchecked unwrap() calls that should not
 ///fail because of the characteristics of the pest PEG.
 fn parsed_file_to_struct<'b>(mut parsed_file: pest::iterators::Pairs<'b, Rule>) -> GabcFile<'b> {
     let mut syllables: Vec<Syllable> = Vec::new();
@@ -298,6 +304,10 @@ fn parsed_file_to_struct<'b>(mut parsed_file: pest::iterators::Pairs<'b, Rule>) 
     }
 }
 
+///Turns a syllable parse result into a Syllable. This relies on unchecked unwrap() calls that should not
+///fail because of the characteristics of the pest PEG.
+///This isn't used in the main parse pipeline because it can't update the current_clef tracker,
+///but it is used in Syllable::new().
 fn parsed_syllable_to_struct<'a>(parsed_syllable: pest::iterators::Pair<'a, Rule>, current_clef: &'a str) -> Syllable<'a> {
     let mut syllable_components = parsed_syllable.into_inner();
     let text = syllable_components.next().unwrap().as_str();
@@ -319,6 +329,8 @@ fn parsed_syllable_to_struct<'a>(parsed_syllable: pest::iterators::Pair<'a, Rule
     Syllable { text, music }
 }
 
+///Turns a note parse result into a Note. This relies on unchecked unwrap() calls that should not
+///fail because of the characteristics of the pest PEG.
 fn parsed_note_to_struct<'b>(parsed_note: pest::iterators::Pair<'b, Rule>, current_clef: &'b str) -> Note<'b> {
         let mut prefix = "";
         let mut position = 'z';
