@@ -11,11 +11,10 @@ mode:8;
 (c3) Pó(eh/hi)pu(h)lus(h) Si(hi)on,(hgh.) *(;) ec(hihi)ce(e.) (::)";
 
 #[test]
-fn test_FILE() {
+fn test_file() {
     let g = GabcFile::new(FILE);
     assert_eq!("office-part", g.attributes[0].0);
     assert_eq!(" Pó", g.syllables[1].text);
-    assert_eq!()
 }
 
 #[test]
