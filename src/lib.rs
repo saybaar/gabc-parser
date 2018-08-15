@@ -163,18 +163,48 @@ impl<'a> Syllable<'a> {
     ///assert_eq!(s.ly_text(), " \\set stanza = \"*\" ");
     ///```
     pub fn ly_text(&self) -> String {
+        //Filter out Lilypond control characters
+        let text = sanitize_ly_text(self.text);
+        //If there are no notes, use "set stanza"
         let mut flag = false;
         for ne in &self.music {
             if let NoteElem::Note(_) = ne {
                 flag = true;
             }
         }
-        if !flag && !(self.text.trim() == "") {
-            return format!(" \\set stanza = \"{}\" ", &self.text);
+        if !flag && !(text.trim() == "") {
+            return format!(" \\set stanza = \"{}\" ", text);
         } else {
-            return self.text.to_string();
+            return text.to_string();
         }
     }
+}
+
+///Sanitize a syllable for Lilypond by removing control characters and replacing interior
+///spaces with underscores. 
+fn sanitize_ly_syllable(text: &str) -> String {
+    let mut t = text.chars().filter(|c| {
+        match c {
+            '{' | '}' => false,
+            _ => true,
+        }
+    }).collect::<String>();
+    let last = t.pop();
+    let mut t_iter = t.chars();
+    let first = t_iter.next();
+    let middle = t_iter.map(|c| match c {
+        ' ' => '_',
+        x => x,
+    }).collect::<String>();
+    let mut result = String::new();
+    if let Some(c) = first {
+        result.push(c);
+    }
+    result.push_str(&middle);
+    if let Some(c) = last {
+        result.push(c);
+    }
+    result
 }
 
 ///Struct representing an entire gabc file.
@@ -242,7 +272,7 @@ pub fn parse_gabc(text: &str, rule: Rule) -> Pairs<Rule> {
 }
 
 ///Pretty string representation of a Pairs parse tree. Useful for directly debugging the output of
-///parse_gabc_file().
+///parse_gabc().
 pub fn debug_print(rules: Pairs<Rule>) -> String {
     print_rule_tree(rules, 0)
 }
