@@ -5,32 +5,31 @@
 extern crate gabc_parser;
 use gabc_parser::*;
 
+static FILE: &'static str = "office-part:Tractus;
+mode:8;
+%%
+(c3) Pó(eh/hi)pu(h)lus(h) Si(hi)on,(hgh.) *(;) ec(hihi)ce(e.) (::)";
+
+#[test]
+fn test_FILE() {
+    let g = GabcFile::new(FILE);
+    assert_eq!("office-part", g.attributes[0].0);
+    assert_eq!(" Pó", g.syllables[1].text);
+    assert_eq!()
+}
+
 #[test]
 fn test_absolute_pitch() {
-    let note = Note {
-        prefix: "",
-        position: 'd',
-        suffix: "",
-        current_clef: "c1",
-    };
+    let note = Note::new("d", "c1");
     assert_eq!("c'", note.absolute_pitch());
 }
 
 #[test]
 fn test_syllable_to_ly() {
-    let syllable = Syllable {
-        text: "*",
-        music: vec![NoteElem::Barline(";")],
-    };
-    assert_eq!("\\divisioMaior", syllable.ly_notes());
+    let break_syllable = Syllable::new("*(;)", "c1");
+    assert_eq!("\\divisioMaior", break_syllable.ly_notes());
+    assert_eq!(" \\set stanza = \"*\" ", break_syllable.ly_text());
+    let num_syllable = Syllable::new(" 3. Po(cde)", "c3");
+    assert_eq!("e(f g)", num_syllable.ly_notes());
+    assert_eq!(" \"3._Po\"", num_syllable.ly_text());
 }
-/*
-#[test]
-fn test_bar() {
-    let mut f = File::open("./tests/bar.gabc").unwrap();
-    let mut s = String::new();
-    f.read_to_string(&mut s).expect("error reading bar");
-    let g = GabcFile::new(&s);
-    assert_eq!("test", g.as_lilypond());
-}
-*/
