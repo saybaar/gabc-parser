@@ -4,19 +4,20 @@ This is a Rust library to parse and analyze gabc, a typesetting language for Gre
 ## Using this library
 To use this library, you will need to include it in a Rust project: \
 (todo) \
-If you're looking for a standalone program to convert gabc files to JSON or Lilypond, try gabc-converter, a simple command-line program that uses this library. (TODO) may be more mature options for Lilypond conversion.
-use std::fs::File;
-use std::io::Read;
+If you're looking for a standalone program to convert gabc files to JSON or Lilypond, try gabc-converter, a simple command-line program that uses this library. <https://github.com/jperon/gabctk> is another recommended option for Lilypond conversion.
+
+## Examples
+The gabc files in /examples are from https://gregobase.selapa.net/, except for populus_sion.gabc, which is the canonical example from http://gregorio-project.github.io/gabc/details.html.
 
 ## Limitations
-This library is in a prototype stage and doesn't correctly process all gabc syntax. Common gabc features not yet supported include:
-* Flat clefs (e.g. "cb2")
-* gabc comments (which start with %)
-Auto-generated Lilypond output may require adjustments, especially to correct the transposition range. Lilypond conversion doesn't yet take gabc note shapes or rhythmic signs into account; this may be implemented in future versions.
+This library is in a prototype stage and doesn't correctly process all gabc syntax. Common gabc features not yet supported include (among others):
+* Accidentals and flat clefs (e.g. "cb2")
+* gabc comments
+Auto-generated Lilypond output may require adjustments, especially to the transposition range (which is c -> c' by default) or to correct formatting and alignment of lyrics.
 
 ## Related work
-* gabctk: A toolkit for gabc, including conversion to Lilypond, abc, midi, and others. Written in Python and documented only in French. <https://github.com/jperon/gabctk>
-* gabc2mid: An earlier iteration of gabctk with midi conversion only. Written in Python and documented in French, with English documentation also available. <https://github.com/jperon/gabc2mid>
+* gabctk: A toolkit for gabc, including conversion to Lilypond, abc, midi, and others. Written in Python and documented (only) in French. <https://github.com/jperon/gabctk>
+* gabc2mid: An earlier iteration of gabctk with midi conversion only. Written in Python with English documentation available. <https://github.com/jperon/gabc2mid>
 * gabc-to-ly: Conversion from gabc to Lilypond via a .csv file, which can be manually edited to add organ accompaniment chords. Written in Python. <https://github.com/ahinkley/gabc-to-ly>
 * lygre: Conversion from gabc to Lilypond. Written in Ruby. <https://github.com/igneus/lygre>
 
