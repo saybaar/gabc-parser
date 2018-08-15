@@ -42,6 +42,14 @@ pub struct Note<'a> {
 
 impl<'a> Note<'a> {
     ///Create a new note from well-formed gabc input.
+    ///```
+    ///# use gabc_parser::*;
+    ///let n = Note::new("h..", "c1");
+    ///assert_eq!(n.prefix, "");
+    ///assert_eq!(n.position, 'h');
+    ///assert_eq!(n.suffix, "..");
+    ///assert_eq!(n.current_clef, "c1");
+    ///```
     pub fn new<'b>(gabc_input: &'b str, current_clef: &'b str) -> Note<'b> {
         let mut parse_result = parse_gabc(gabc_input, Rule::note);
         parsed_note_to_struct(parse_result.next().unwrap(), current_clef)
@@ -89,8 +97,8 @@ impl<'a> NoteElem<'a> {
     ///Note suffixes (e.g. ".") that have Lilypond equivalents are not yet implemented.
     ///```
     ///# use gabc_parser::*;
-    ///let ne = NoteElem::Note(Note::new("h..", "c1"));
-    ///assert_eq!(ne.to_ly(), "g'");
+    ///let n = NoteElem::Note(Note::new("h..", "c1"));
+    ///assert_eq!(n.to_ly(), "g'");
     ///let s = NoteElem::Spacer("/");
     ///assert_eq!(s.to_ly(), "");
     ///let b = NoteElem::Barline(":");
@@ -122,6 +130,12 @@ pub struct Syllable<'a> {
 
 impl<'a> Syllable<'a> {
     ///Create a new syllable from well-formed gabc input.
+    ///```
+    ///# use gabc_parser::*;
+    ///let s = Syllable::new("Po(eh/hi)", "c3");
+    ///assert_eq!(s.text, "Po");
+    ///assert_eq!(s.music.len(), 5);
+    ///```
     pub fn new<'b>(gabc_input: &'b str, current_clef: &'b str) -> Syllable<'b> {
         let mut parse_result = parse_gabc(gabc_input, Rule::syllable);
         parsed_syllable_to_struct(parse_result.next().unwrap(), current_clef)
@@ -217,6 +231,15 @@ pub struct GabcFile<'a> {
 
 impl<'a> GabcFile<'a> {
     ///Create a new GabcFile from well-formed gabc input.
+    ///```
+    ///# use gabc_parser::*;
+    ///let s = "name:Test;
+    ///%%
+    ///(c1) Hel(e.)lo(hi~) (::)";
+    ///let f = GabcFile::new(s);
+    ///assert_eq!(f.attributes[0], ("name", "Test"));
+    ///assert_eq!(f.syllables.len(), 4); //clefs currently produce an empty syllable
+    ///```
     pub fn new(gabc_input: &str) -> GabcFile {
         let parse_result = parse_gabc(gabc_input, Rule::file);
         parsed_file_to_struct(parse_result)
@@ -382,6 +405,8 @@ fn parsed_note_to_struct<'b>(parsed_note: pest::iterators::Pair<'b, Rule>, curre
         }
 }
 
+//Lilypond template below derived from
+//<http://lilypond.org/doc/v2.18/Documentation/snippets/templates#templates-ancient-notation-template-_002d-modern-transcription-of-gregorian-music>
 static LY_1: &'static str = r#"\include "gregorian.ly"
 
 chant = \absolute { \transpose c c' {

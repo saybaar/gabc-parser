@@ -10,7 +10,7 @@ spacer = { ( "!" | "@" | "/" | "//" | "/0" | "/[" ~ "-"? ~ ('0'..'9') ~ "]"  | "
 note = { prefix* ~ position ~ suffix* }
 prefix = { "-" }
 position = { ('a'..'m') | ('A'..'M') }
-suffix = { ("~" | ">" | "<" | "v" | "V" | "o~" | "o<" | "o" | "w" | "s<" | "s" | "x" | "y" | "#" | "." | ".." | "'" | "_" ) }
+suffix = { ("~" | ">" | "<" | "v" | "V" | "o~" | "o<" | "o" | "w" | "s<" | "s" | "x" | "y" | "#" | ".." | "." | "'" | "_" ) }
 syllable = { string ~ "(" ~ (clef | note | barline | spacer)* ~ ")" }
 
 string = { (!("(") ~ any)* }
