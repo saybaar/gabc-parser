@@ -9,7 +9,7 @@ gabc-parser = "0.1.0"
 ```
 and load it in a Rust file:
 ```
-extern crate gabc-parser
+extern crate gabc-parser;
 ```
 If you're looking for a standalone program to convert gabc files to JSON or Lilypond, try [gabc-converter](https://github.com/saybaar/gabc-converter), a simple command-line program that uses this library. [gabctk](https://github.com/jperon/gabctk) is another good option for Lilypond conversion.
 
