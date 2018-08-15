@@ -6,6 +6,12 @@
 name = "gabc-parser"
 version = "0.1.0"
 authors = ["Lydia Simmons"]
+description = "A library for parsing, manipulating, and converting gabc files"
+repository = "github.com/saybaar/gabc-parser"
+readme = "./README.md"
+keywords = ["gabc", "lilypond", "gregorio"]
+categories = ["command-line-utilities", "parser-implementations"]
+license = "GPL-3.0-or-later"
 
 [dependencies]
 pest = "1.0.6"
