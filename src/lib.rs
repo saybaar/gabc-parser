@@ -164,7 +164,7 @@ impl<'a> Syllable<'a> {
     ///```
     pub fn ly_text(&self) -> String {
         //Filter out Lilypond control characters
-        let text = sanitize_ly_text(self.text);
+        let text = sanitize_ly_syllable(self.text);
         //If there are no notes, use "set stanza"
         let mut flag = false;
         for ne in &self.music {
@@ -180,30 +180,29 @@ impl<'a> Syllable<'a> {
     }
 }
 
-///Sanitize a syllable for Lilypond by removing control characters and replacing interior
-///spaces with underscores. 
+///Sanitize a syllable for Lilypond by removing control characters, replacing interior spaces with
+///underscores, and surrounding anything starting with a number with "double quotes"
 fn sanitize_ly_syllable(text: &str) -> String {
-    let mut t = text.chars().filter(|c| {
+    let start = text.trim_left() != text;
+    let end = text.trim_right() != text;
+    let mut t = text.trim().chars().filter(|c| {
         match c {
             '{' | '}' => false,
             _ => true,
         }
-    }).collect::<String>();
-    let last = t.pop();
-    let mut t_iter = t.chars();
-    let first = t_iter.next();
-    let middle = t_iter.map(|c| match c {
+    }).map(|c| match c {
         ' ' => '_',
         x => x,
     }).collect::<String>();
+    if let Some(c) = t.chars().next() {
+        if c.is_numeric() {
+            t = format!("\"{}\"", t);
+        }
+    }
     let mut result = String::new();
-    if let Some(c) = first {
-        result.push(c);
-    }
-    result.push_str(&middle);
-    if let Some(c) = last {
-        result.push(c);
-    }
+    if start {result.push(' ')};
+    result.push_str(&t);
+    if end {result.push(' ')};
     result
 }
 
