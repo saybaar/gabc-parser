@@ -4,7 +4,7 @@
 
 [package]
 name = "gabc-parser"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Lydia Simmons"]
 description = "A library for parsing, manipulating, and converting gabc files"
 repository = "https://github.com/saybaar/gabc-parser"
