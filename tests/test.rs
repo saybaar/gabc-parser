@@ -70,6 +70,10 @@ fn test_raw_parsing() {
     assert!(good_file.is_ok());
     let bad_file = GABCParser::parse(Rule::file, "this is not a gabc file");
     assert!(bad_file.is_err());
+    let good_attr = GABCParser::parse(Rule::attribute, "Key:value;");
+    assert!(good_attr.is_ok());
+    let bad_attr = GABCParser::parse(Rule::attribute, "this is not an attribute");
+    assert!(bad_attr.is_err());
     let good_syll = GABCParser::parse(Rule::syllable, "Pó(eh/hi)");
     assert!(good_syll.is_ok());
     let bad_syll = GABCParser::parse(Rule::syllable, "this is not a syllable");
