@@ -3,8 +3,8 @@
 //See the LICENSE file in this distribution for license terms.
 
 //! Library for parsing and manipulating gabc code. The intended use case is to parse an entire
-//! gabc file into a `GabcFile` struct with `GabcFile::new()`. The GABCParser object and the
-//! `parse_gabc()` method provide access to the parse tree itself for lower-level processing.
+//! gabc file into a `GabcFile` struct with `GabcFile::new()`. The `GABCParser` struct
+//! provides access to the parse tree itself for lower-level processing.
 //! Documentation for gabc is available at http://gregorio-project.github.io/gabc/index.html.
 
 extern crate itertools;
@@ -27,7 +27,31 @@ const _GRAMMAR: &str = include_str!("gabc.pest");
 
 #[derive(Parser)]
 #[grammar = "gabc.pest"]
-///Parser for gabc, generated from `gabc.pest`
+///Parser that recognizes gabc, generated from `gabc.pest`.
+///# Examples
+///```
+/// # extern crate pest;
+/// # extern crate gabc_parser;
+/// # use gabc_parser::{GABCParser, Rule};
+/// # use pest::Parser;
+/// # fn main() {
+/// let pairs = GABCParser::parse(Rule::syllable, "Po(ev/)");
+/// assert!(pairs.is_ok());
+/// //pairs is a Result containing an iterator with a single Pair;
+/// //we unwrap the syllable pair and examine its sub-pairs
+/// let mut pair_iter = pairs.unwrap().next().unwrap().into_inner();
+/// let a = pair_iter.next().unwrap();
+/// assert_eq!(a.as_rule(), Rule::string);
+/// assert_eq!(a.as_str(), "Po");
+/// let b = pair_iter.next().unwrap();
+/// assert_eq!(b.as_rule(), Rule::note);
+/// assert_eq!(b.as_str(), "ev");
+/// let c = pair_iter.next().unwrap();
+/// assert_eq!(c.as_rule(), Rule::spacer);
+/// assert_eq!(c.as_str(), "/");
+/// assert_eq!(pair_iter.next(), None);
+/// # }
+///```
 pub struct GABCParser;
 
 //-----------------------------------------------------------------------
