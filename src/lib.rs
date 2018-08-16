@@ -47,6 +47,7 @@ pub struct Note<'a> {
 
 impl<'a> Note<'a> {
     ///Create a new note from well-formed gabc input.
+    ///# Examples
     ///```
     ///# use gabc_parser::*;
     ///let n = Note::new("h..", "c1");
@@ -61,6 +62,7 @@ impl<'a> Note<'a> {
     }
     ///Get the absolute pitch of this note in modern (Lilypond) notation, between a, and a'''.
     ///Assumes that the clef indicates middle C or the F above middle C.
+    ///# Examples
     ///```
     ///# use gabc_parser::*;
     ///let n = Note::new("h..", "c1");
@@ -102,6 +104,7 @@ pub enum NoteElem<'a> {
 impl<'a> NoteElem<'a> {
     ///Get the Lilypond representation of this note element. gabc spacers (e.g. "/") are ignored;
     ///`Note` suffixes (e.g. ".") that have Lilypond equivalents are not yet implemented.
+    ///# Examples
     ///```
     ///# use gabc_parser::*;
     ///let n = NoteElem::Note(Note::new("h..", "c1"));
@@ -137,6 +140,7 @@ pub struct Syllable<'a> {
 
 impl<'a> Syllable<'a> {
     ///Create a new syllable from well-formed gabc input.
+    ///# Examples
     ///```
     ///# use gabc_parser::*;
     ///let s = Syllable::new("Po(eh/hi)", "c3");
@@ -148,6 +152,7 @@ impl<'a> Syllable<'a> {
         parsed_syllable_to_struct(parse_result.next().unwrap(), current_clef)
     }
     ///Translate this syllable's music string into a tied sequence of Lilypond notes.
+    ///# Examples
     ///```
     ///# use gabc_parser::*;
     ///let s = Syllable::new("Po(eh/hi)", "c3");
@@ -178,6 +183,7 @@ impl<'a> Syllable<'a> {
     ///Translate this syllable's text into valid Lilypond lyrics. If there are no Notes in this
     ///syllable's music string, add "\set stanza = " to prevent Lilypond matching this text
     ///to a note.
+    ///# Examples
     ///```
     ///# use gabc_parser::*;
     ///let s = Syllable::new("*()", "c3");
@@ -239,6 +245,7 @@ pub struct GabcFile<'a> {
 
 impl<'a> GabcFile<'a> {
     ///Create a new `GabcFile` from well-formed gabc input.
+    ///# Examples
     ///```
     ///# use gabc_parser::*;
     ///let s = "name:Test;
@@ -264,6 +271,19 @@ impl<'a> GabcFile<'a> {
     }
     ///Extract the notes of this file into well-formed Lilypond music, with a newline between each
     ///syllable
+    ///# Examples
+    ///```
+    ///# use gabc_parser::*;
+    ///let s = "name:Test;
+    ///%%
+    ///(c1) Hel(e.)lo(hi~) (::)";
+    ///let f = GabcFile::new(s);
+    ///assert_eq!(f.ly_notes(), r#"
+    ///d'
+    ///g'(a')
+    ///\finalis
+    ///"#);
+    ///```
     pub fn ly_notes(&self) -> String {
         let mut notes = String::new();
         for syllable in &self.syllables {
@@ -274,6 +294,14 @@ impl<'a> GabcFile<'a> {
     }
     ///Extract the text of this file into well-formed Lilypond lyrics, inserting " -- " to join
     ///syllables where appropriate.
+    ///# Examples
+    ///```
+    ///# use gabc_parser::*;
+    ///let s = "name:Test;
+    ///%%
+    ///(c1) Hel(e.)lo(hi~) (::)";
+    ///let f = GabcFile::new(s);
+    ///assert_eq!(f.ly_lyrics(), " Hel -- lo  ");
     pub fn ly_lyrics(&self) -> String {
         let mut result = String::new();
         let syllable_iter = &mut self.syllables.iter().peekable();
