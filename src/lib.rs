@@ -2,6 +2,11 @@
 //This software is licensed under the GNU General Public License v3.0.
 //See the LICENSE file in this distribution for license terms.
 
+//! Library for parsing and manipulating gabc code. The most common use case is to parse an entire
+//! gabc file into a `GabcFile` struct with `GabcFile::new()`. The GABCParser object provides
+//! access to the parse tree itself for lower-level processing.
+//! Documentation for gabc is available at http://gregorio-project.github.io/gabc/index.html.
+
 extern crate itertools;
 extern crate pest;
 #[macro_use]
@@ -22,6 +27,7 @@ const _GRAMMAR: &str = include_str!("gabc.pest");
 
 #[derive(Parser)]
 #[grammar = "gabc.pest"]
+///Parser for gabc, generated from `gabc.pest`
 pub struct GABCParser;
 
 //-----------------------------------------------------------------------
@@ -29,12 +35,11 @@ pub struct GABCParser;
 ///Struct representing a gabc note.
 #[derive(Debug, Serialize)]
 pub struct Note<'a> {
-    ///Entire prefix of the note (uncommon, only implemented here for "-" which indicates an initio
-    ///debilis)
+    ///Entire prefix of the note (usually empty)
     pub prefix: &'a str,
     ///Main character of the note: its position in the gabc staff (a-m)
     pub position: char,
-    ///Entire suffix of the note, including shape indicators and rhythmic signs, e.g. "V."
+    ///Entire suffix string of the note, including shape indicators and rhythmic signs
     pub suffix: &'a str,
     ///Clef governing this note in its original context
     pub current_clef: &'a str,
@@ -83,18 +88,20 @@ impl<'a> Note<'a> {
     }
 }
 
-///Any element that can appear in the music for a given syllable, including bars (e.g. ":"),
-///separators (e.g. "/"), and Notes
+///Any element that can appear in a gabc music string.
 #[derive(Debug, Serialize)]
 pub enum NoteElem<'a> {
+    ///A gabc spacer, e.g. "/"
     Spacer(&'a str),
+    ///A gabc bar separator, e.g. "::"
     Barline(&'a str),
+    ///A `Note` struct
     Note(Note<'a>),
 }
 
 impl<'a> NoteElem<'a> {
     ///Get the Lilypond representation of this note element. gabc spacers (e.g. "/") are ignored;
-    ///Note suffixes (e.g. ".") that have Lilypond equivalents are not yet implemented.
+    ///`Note` suffixes (e.g. ".") that have Lilypond equivalents are not yet implemented.
     ///```
     ///# use gabc_parser::*;
     ///let n = NoteElem::Note(Note::new("h..", "c1"));
@@ -122,9 +129,9 @@ impl<'a> NoteElem<'a> {
 ///Struct representing a gabc syllable with text and music, e.g. "Po(eh/hi)"
 #[derive(Debug, Serialize)]
 pub struct Syllable<'a> {
-    ///Text in this syllable, e.g. "Po"
+    ///Text part of the syllable
     pub text: &'a str,
-    ///Music in this syllable, e.g. "eh/hi", as a Vec of NoteElems
+    ///Music part of the syllable
     pub music: Vec<NoteElem<'a>>,
 }
 
@@ -195,7 +202,8 @@ impl<'a> Syllable<'a> {
 }
 
 ///Sanitize a syllable for Lilypond by removing control characters, replacing interior spaces with
-///underscores, and surrounding anything starting with a number with "double quotes"
+///underscores, and surrounding anything starting with a number with "double quotes" (this is
+///a pretty hacky way to prevent Lilypond errors)
 fn sanitize_ly_syllable(text: &str) -> String {
     let start = text.trim_left() != text;
     let end = text.trim_right() != text;
@@ -225,12 +233,12 @@ fn sanitize_ly_syllable(text: &str) -> String {
 pub struct GabcFile<'a> {
     ///This file's attributes, e.g. "name: Populus Sion", as key/value tuples
     pub attributes: Vec<(&'a str, &'a str)>,
-    ///This file's Syllables
+    ///This file's `Syllable`s
     pub syllables: Vec<Syllable<'a>>,
 }
 
 impl<'a> GabcFile<'a> {
-    ///Create a new GabcFile from well-formed gabc input.
+    ///Create a new `GabcFile` from well-formed gabc input.
     ///```
     ///# use gabc_parser::*;
     ///let s = "name:Test;
@@ -244,11 +252,11 @@ impl<'a> GabcFile<'a> {
         let parse_result = parse_gabc(gabc_input, Rule::file);
         parsed_file_to_struct(parse_result)
     }
-    ///Translate this GabcFile into JSON.
+    ///Translate this `GabcFile` into JSON.
     pub fn as_json(&self) -> String {
         serde_json::to_string(self).unwrap()
     }
-    ///Translate this GabcFile into a well-formed Lilypond file, by translating its text and music
+    ///Translate this `GabcFile` into a well-formed Lilypond file, by translating its text and music
     ///and inserting them into a template derived from
     ///<http://lilypond.org/doc/v2.18/Documentation/snippets/templates#templates-ancient-notation-template-_002d-modern-transcription-of-gregorian-music>
     pub fn as_lilypond(&self) -> String {
@@ -278,8 +286,8 @@ impl<'a> GabcFile<'a> {
     }
 }
 
-///Parses a gabc file into pest's Pairs type. This is useful if you want to process the raw pairs
-///using a mechanism other than the GabcFile struct.
+///Parses a gabc file into pest's `Pairs` type. This is useful to process the raw pairs
+///using a mechanism other than the `GabcFile` struct.
 pub fn parse_gabc(text: &str, rule: Rule) -> Pairs<Rule> {
     let parse_result = GABCParser::parse(rule, &text);
     match parse_result {
@@ -293,13 +301,13 @@ pub fn parse_gabc(text: &str, rule: Rule) -> Pairs<Rule> {
     }
 }
 
-///Pretty string representation of a Pairs parse tree. Useful for directly debugging the output of
-///parse_gabc().
+///Pretty string representation of a `Pairs` parse tree. Useful for directly debugging the output of
+///`parse_gabc()`.
 pub fn debug_print(rules: Pairs<Rule>) -> String {
     print_rule_tree(rules, 0)
 }
 
-///Pretty-print parsed Pairs (recursive version).
+///Pretty-print parsed `Pairs` (recursive version).
 fn print_rule_tree(rules: Pairs<Rule>, tabs: usize) -> String {
     let mut output = String::new();
     for rule in rules {
@@ -312,7 +320,7 @@ fn print_rule_tree(rules: Pairs<Rule>, tabs: usize) -> String {
     output
 }
 
-///Turns a file parse result into a GabcFile. This relies on unchecked unwrap() calls that should not
+///Turns a file parse result into a `GabcFile`. This relies on unchecked unwrap() calls that should not
 ///fail because of the characteristics of the pest PEG.
 fn parsed_file_to_struct<'b>(mut parsed_file: pest::iterators::Pairs<'b, Rule>) -> GabcFile<'b> {
     let mut syllables: Vec<Syllable> = Vec::new();
@@ -357,10 +365,10 @@ fn parsed_file_to_struct<'b>(mut parsed_file: pest::iterators::Pairs<'b, Rule>) 
     }
 }
 
-///Turns a syllable parse result into a Syllable. This relies on unchecked unwrap() calls that should not
+///Turns a syllable parse result into a `Syllable`. This relies on unchecked unwrap() calls that should not
 ///fail because of the characteristics of the pest PEG.
 ///This isn't used in the main parse pipeline because it can't update the current_clef tracker,
-///but it is used in Syllable::new().
+///but it is used in `Syllable::new()`.
 fn parsed_syllable_to_struct<'a>(parsed_syllable: pest::iterators::Pair<'a, Rule>, current_clef: &'a str) -> Syllable<'a> {
     let mut syllable_components = parsed_syllable.into_inner();
     let text = syllable_components.next().unwrap().as_str();
@@ -382,7 +390,7 @@ fn parsed_syllable_to_struct<'a>(parsed_syllable: pest::iterators::Pair<'a, Rule
     Syllable { text, music }
 }
 
-///Turns a note parse result into a Note. This relies on unchecked unwrap() calls that should not
+///Turns a note parse result into a `Note`. This relies on unchecked unwrap() calls that should not
 ///fail because of the characteristics of the pest PEG.
 fn parsed_note_to_struct<'b>(parsed_note: pest::iterators::Pair<'b, Rule>, current_clef: &'b str) -> Note<'b> {
         let mut prefix = "";
