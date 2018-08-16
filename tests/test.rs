@@ -12,12 +12,33 @@ mode:8;
 %%
 (c3) Pó(eh/hi)pu(h)lus(h) Si(hi)on,(hgh.) *(;) ec(hihi)ce(e.) (::)";
 
+static LYRICS: &'static str = " Pó -- pu -- lus Si -- on, \\set stanza = \" *\"  ec -- ce  ";
+
+static NOTES: &'static str = "
+g(c' c' d')
+c'
+c'
+c'(d')
+c'(b c')
+\\divisioMaior
+c'(d' c' d')
+g
+\\finalis
+";
+
 #[test]
 fn new_file_works() {
     let g = GabcFile::new(FILE);
     assert_eq!("office-part", g.attributes[0].0);
     assert_eq!(2, g.attributes.len());
     assert_eq!(" Pó", g.syllables[1].text);
+}
+
+#[test]
+fn test_file_text_and_lyrics() {
+    let g = GabcFile::new(FILE);
+    assert_eq!(g.ly_lyrics(), LYRICS);
+    assert_eq!(g.ly_notes(), NOTES);
 }
 
 #[test]
