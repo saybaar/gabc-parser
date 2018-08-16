@@ -2,9 +2,9 @@
 //This software is licensed under the GNU General Public License v3.0.
 //See the LICENSE file in this distribution for license terms.
 
-//! Library for parsing and manipulating gabc code. The most common use case is to parse an entire
-//! gabc file into a `GabcFile` struct with `GabcFile::new()`. The GABCParser object provides
-//! access to the parse tree itself for lower-level processing.
+//! Library for parsing and manipulating gabc code. The intended use case is to parse an entire
+//! gabc file into a `GabcFile` struct with `GabcFile::new()`. The GABCParser object and the
+//! `parse_gabc()` method provide access to the parse tree itself for lower-level processing.
 //! Documentation for gabc is available at http://gregorio-project.github.io/gabc/index.html.
 
 extern crate itertools;
@@ -175,7 +175,7 @@ impl<'a> Syllable<'a> {
         result.push_str(")");
         result
     }
-    ///Translate this syllable's text into Lilypond lyrics. If there are no Notes in this
+    ///Translate this syllable's text into valid Lilypond lyrics. If there are no Notes in this
     ///syllable's music string, add "\set stanza = " to prevent Lilypond matching this text
     ///to a note.
     ///```
@@ -260,12 +260,17 @@ impl<'a> GabcFile<'a> {
     ///and inserting them into a template derived from
     ///<http://lilypond.org/doc/v2.18/Documentation/snippets/templates#templates-ancient-notation-template-_002d-modern-transcription-of-gregorian-music>
     pub fn as_lilypond(&self) -> String {
+        format!("{}{}{}{}{}", LY_1, &self.ly_notes(), LY_2, &self.ly_lyrics(), LY_3)
+    }
+    ///Extract the notes of this file into well-formed Lilypond music, with a newline between each
+    ///syllable
+    pub fn ly_notes(&self) -> String {
         let mut notes = String::new();
         for syllable in &self.syllables {
             notes.push_str(&syllable.ly_notes());
             notes.push_str("\n");
         }
-        format!("{}{}{}{}{}", LY_1, notes, LY_2, &self.ly_lyrics(), LY_3)
+        notes
     }
     ///Extract the text of this file into well-formed Lilypond lyrics, inserting " -- " to join
     ///syllables where appropriate.
@@ -286,13 +291,8 @@ impl<'a> GabcFile<'a> {
     }
 }
 
-<<<<<<< HEAD
-///Parses a gabc file into pest's `Pairs` type. This is useful to process the raw pairs
-///using a mechanism other than the `GabcFile` struct.
-=======
 ///Wrapper for GABCParser::parse() that prints a helpful error and exits the process if parsing
-///fails (a friendly alternative to panicking).  
->>>>>>> 05d902481f957120ef6fd52121d61d13be923c79
+///fails (a friendly alternative to panicking).
 pub fn parse_gabc(text: &str, rule: Rule) -> Pairs<Rule> {
     let parse_result = GABCParser::parse(rule, &text);
     match parse_result {
@@ -307,7 +307,7 @@ pub fn parse_gabc(text: &str, rule: Rule) -> Pairs<Rule> {
 }
 
 ///Pretty string representation of a `Pairs` parse tree. Useful for directly debugging the output of
-///`parse_gabc()`.
+///`GABCParser::parse()` or `parse_gabc()`.
 pub fn debug_print(rules: Pairs<Rule>) -> String {
     print_rule_tree(rules, 0)
 }
