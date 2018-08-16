@@ -278,8 +278,8 @@ impl<'a> GabcFile<'a> {
     }
 }
 
-///Parses a gabc file into pest's Pairs type. This is useful if you want to process the raw pairs
-///using a mechanism other than the GabcFile struct.
+///Wrapper for GABCParser::parse() that prints a helpful error and exits the process if parsing
+///fails (a friendly alternative to panicking).  
 pub fn parse_gabc(text: &str, rule: Rule) -> Pairs<Rule> {
     let parse_result = GABCParser::parse(rule, &text);
     match parse_result {
