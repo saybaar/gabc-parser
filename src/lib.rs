@@ -286,8 +286,13 @@ impl<'a> GabcFile<'a> {
     }
 }
 
+<<<<<<< HEAD
 ///Parses a gabc file into pest's `Pairs` type. This is useful to process the raw pairs
 ///using a mechanism other than the `GabcFile` struct.
+=======
+///Wrapper for GABCParser::parse() that prints a helpful error and exits the process if parsing
+///fails (a friendly alternative to panicking).  
+>>>>>>> 05d902481f957120ef6fd52121d61d13be923c79
 pub fn parse_gabc(text: &str, rule: Rule) -> Pairs<Rule> {
     let parse_result = GABCParser::parse(rule, &text);
     match parse_result {
